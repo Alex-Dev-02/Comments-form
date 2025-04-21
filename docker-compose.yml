@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  nginx:
+    build:
+      context: ./service-configuration/nginx
+    container_name: nginx
+    restart: unless-stopped
+    volumes:
+      - ./index.php:/var/www/index.php
+      - ./:/var/www/
+    depends_on:
+      - php-fpm
+      - database
+    ports:
+      - 4000:80
+    networks:
+      - php-stack
+
+  php-fpm:
+      build:
+        context: ./service-configuration/php-fpm
+      container_name: php-fpm
+      restart: unless-stopped
+      volumes:
+        - ./index.php:/var/www/index.php
+        - ./:/var/www/
+      depends_on:
+        - database
+      networks:
+        - php-stack
+
+  database:
+    image: mariadb:latest
+    container_name: database
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE= ${DB_NAME}
+      - MYSQL_USER= ${DB_USER}
+      - MYSQL_PASSWORD= ${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD= ${DB_ROOT_PASSWORD}
+    volumes:
+      - ./service-configuration/database/data.sql:/docker-entrypoint-initdb.d/data.sql
+    networks:
+      - php-stack
+
+networks:
+  php-stack:
+    name: php-stack
